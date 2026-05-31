@@ -13,3 +13,12 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Build outputs
+*.apk
+*.aab
+*.b64
+app/release/
+
+# Gradle
+!gradle/wrapper/gradle-wrapper.jar
