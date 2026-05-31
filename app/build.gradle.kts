@@ -42,9 +42,19 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("ci-release.keystore")
+            storePassword = providers.environmentVariable("KS_PASS").getOrElse("")
+            keyAlias = providers.environmentVariable("KS_ALIAS").getOrElse("easydict")
+            keyPassword = providers.environmentVariable("KS_PASS").getOrElse("")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

@@ -1,0 +1,63 @@
+name: Release APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup SDK
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          if [ ! -d "$ANDROID_HOME/platforms/android-34" ]; then
+            $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
+          fi
+
+      - name: Decode keystore
+        run: echo "${{ secrets.CI_KEYSTORE_BASE64 }}" | base64 -d > app/ci-release.keystore
+
+      - name: Bump versionCode
+        run: |
+          sed -i "s/^project.app.versionCode=.*/project.app.versionCode=${{ github.run_number }}/" gradle.properties
+
+      - name: Build release APK
+        env:
+          KS_PASS: ${{ secrets.KS_PASS }}
+          KS_ALIAS: ${{ secrets.KS_ALIAS }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Package & Release
+        run: |
+          SRC=$(find app/build -name "*.apk" -type f 2>/dev/null | head -1)
+          if [ -z "$SRC" ]; then echo "ERROR: No APK found!"; exit 1; fi
+          VNAME=$(grep 'project.app.versionName' gradle.properties | cut -d'=' -f2)
+          APK="EasyDict-${VNAME}.apk"
+          cp "$SRC" $APK
+
+          if gh release view "$VNAME" &>/dev/null; then
+            echo "Updating existing release $VNAME"
+            gh release upload "$VNAME" $APK --clobber
+          else
+            echo "Creating release $VNAME"
+            gh release create "$VNAME" $APK --title "$VNAME" --notes "EasyDict $VNAME"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

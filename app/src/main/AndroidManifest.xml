@@ -18,7 +18,7 @@
 
     <application
         android:name=".application.EasyDictApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -27,7 +27,7 @@
         android:supportsRtl="true"
         android:taskAffinity="com.qxtao.easydict.taskaffinity"
         android:theme="@style/Theme.EasyDict"
-        android:usesCleartextTraffic="true"
+        android:usesCleartextTraffic="false"
         tools:targetApi="34">
         <receiver
             android:name=".ui.widget.QuickSearchWidget"
